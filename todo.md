@@ -1,0 +1,36 @@
+- Videos 
+    - Long Videos (movies)
+    - Short Videos
+    - Playlist -> List of movies
+    - Seasons -> Playlists of Playlists
+
+- Categories
+    - Action, Comedy
+- Tags
+    - Action, Comedy, Drama, Action-Comedy, Live Studio Audience,
+- User Ratings
+    - 1-5 Start Rating
+    - Prepares our system for Machine Learning
+- Search
+    - Title
+    - Descriptions
+    - Tags
+
+## Future
+    - User Registration
+    - JavaScripts UI / Front end Library
+        - React, Vue, Etc,
+        - Bootstrap, Tailwind CSS
+        - Django Rest Framework for API
+    - Recommender
+        - Collaborative Filtering with Machine Learning
+    - Elasticsearch
+    - Video Analytics & Watch history
+    - Video hosts API
+        - Vimeo, YouTube,
+        - Open Source Option (ffmpeg)
+    - API-driven Video Details
+        -Cast Members (actors, directors)
+        -Release Year
+    - Payments Integration
+        - Stripe / Braintree / Crypot
