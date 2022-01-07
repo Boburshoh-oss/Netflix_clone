@@ -1,8 +1,12 @@
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
+from tags.models import TaggedItem
+from ratings.models import Rating
+from django.db.models import Avg, Max, Min
 
-# Create your models here.
+
 class PublishStateOptions(models.TextChoices):
         PUBLISH = "PU", "Publish"
         DRAFT = 'DR', 'Draft'
@@ -20,7 +24,7 @@ class PlayListQuerySet(models.QuerySet):
         now = timezone.now()
         return self.filter(
             state=PublishStateOptions.PUBLISH,
-            publish_timestamp__lte = now
+            # publish_timestamp__lte = now
         )
 
 class PlayListManager(models.Manager):
@@ -29,12 +33,15 @@ class PlayListManager(models.Manager):
     
     def published(self):
         return self.get_queryset().published()
+
+    def featured_playlist(self):
+        return self.get_queryset().filter(type=PlayListTypeChoices.PLAYLIST)
         
 class PlayList(models.Model):
     parent = models.ForeignKey('self',on_delete=models.SET_NULL,null=True, blank=True)
     category = models.ForeignKey("categories.Category", on_delete=models.SET_NULL,blank=True,null=True)
     order = models.IntegerField(default=1)
-    category = models.ForeignKey("categories.Category",blank=True, null=True,on_delete=models.SET_NULL,default=1)
+    category = models.ForeignKey("categories.Category",blank=True, null=True,on_delete=models.SET_NULL)
     title = models.CharField(max_length=255)
     type = models.CharField(max_length=3,choices=PlayListTypeChoices.choices, default=PlayListTypeChoices.PLAYLIST)
     description = models.TextField(blank=True, null=True)
@@ -46,13 +53,19 @@ class PlayList(models.Model):
     updated = models.DateTimeField(auto_now=True)
     state = models.CharField(max_length=2, choices=PublishStateOptions.choices, default=PublishStateOptions.DRAFT)
     publish_timestamp = models.DateTimeField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    
+    tags = GenericRelation(TaggedItem, related_query_name='playlist')
+    ratings = GenericRelation(Rating,related_query_name='playlist')
+
     objects = PlayListManager()
     
     def __str__(self):
         return self.title
 
-   
+    def get_rating_avg(self):
+        return PlayList.objects.filter(id=self.id).aggregate(Avg("ratings__value"))
+    
+    def get_rating_spread(self):
+        return PlayList.objects.filter(id=self.id).aggregate(max=Max("ratings__value"), min=Min("ratings__value"))
     
     def save(self, *args, **kwargs):     
         if self.state == PublishStateOptions.PUBLISH and self.publish_timestamp is None:
@@ -61,6 +74,9 @@ class PlayList(models.Model):
                self.publish_timestamp = None
 
         return super().save(*args,**kwargs)
+
+    def get_short_display(self):
+        return 
     
     @property
     def is_published(self):
@@ -79,6 +95,8 @@ class PlayListItem(models.Model):
 class MovieProxyManager(PlayListManager):
     def all(self):
         return self.get_queryset().filter(type=PlayListTypeChoices.MOVIE)
+    
+
 
 class MovieProxy(PlayList):
     objects = MovieProxyManager()
@@ -90,6 +108,7 @@ class MovieProxy(PlayList):
     def save(self, *args, **kwargs):
         self.type = PlayListTypeChoices.MOVIE
         return super().save(*args, **kwargs)
+
 
 class TVShowProxyManager(PlayListManager):
     def all(self):
@@ -105,6 +124,13 @@ class TVShowProxy(PlayList):
     def save(self, *args, **kwargs):
         self.type = PlayListTypeChoices.SHOW
         return super().save(*args, **kwargs)
+    
+    @property
+    def seasons(self):
+        return self.playlist_set.published()
+
+    def get_short_display(self):
+        return f"{self.seasons.count()} Seasons"
 
 class TVShowSeasonProxyManager(PlayListManager):
     def all(self):

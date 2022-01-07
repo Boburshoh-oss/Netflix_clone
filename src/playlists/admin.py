@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import PlayList, PlayListItem, PlayListTypeChoices, TVShowProxy, TVShowSeasonProxy, MovieProxy
-# Register your models here.
-
+from tags.admin import TaggedItemInline
 
 class MovieProxyAdmin(admin.ModelAdmin):
     list_display = ['title','parent']
@@ -36,7 +35,7 @@ class TVShowSeasonProxyInline(admin.TabularInline):
     fields = ['order','title','state']
 
 class TVShowProxyAdmin(admin.ModelAdmin):
-    inlines = [TVShowSeasonProxyInline]
+    inlines = [TaggedItemInline,TVShowSeasonProxyInline]
     field = ['title','decription','state',"video","category"]
     
     class Meta:
