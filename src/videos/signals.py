@@ -1,7 +1,7 @@
 from django.db.models.signals import pre_save
 from django.utils.text import slugify
-
-from playlists.models import PlayList
+from playlists.utils import get_unique_slug
+from playlists.models import PlayList,MovieProxy,TVShowProxy,TVShowSeasonProxy
 from .models import PublishStateOptions, Video
 from django.utils import timezone
 from django.dispatch import receiver
@@ -19,11 +19,21 @@ from django.dispatch import receiver
 #     elif instance.state == PublishStateOptions.DRAFT:
 #         instance.publish_timestamp = None
 
-@receiver(pre_save,sender=Video)
+
 def slugify_pre_save(sender,instance,*args,**kwargs):
     title = instance.title
     slug = instance.slug
     if slug is None:
         instance.slug = slugify(title)
 
-pre_save.connect(slugify_pre_save,sender=PlayList)
+@receiver(pre_save,sender=Video)
+def unique_slugify_pre_save(sender,instance,*args,**kwargs):
+    title = instance.title
+    slug = instance.slug
+    if slug is None:
+        instance.slug = get_unique_slug(instance,size=5)
+
+pre_save.connect(unique_slugify_pre_save,sender=PlayList)
+pre_save.connect(unique_slugify_pre_save,sender=MovieProxy)
+pre_save.connect(unique_slugify_pre_save,sender=TVShowProxy)
+pre_save.connect(unique_slugify_pre_save,sender=TVShowSeasonProxy)

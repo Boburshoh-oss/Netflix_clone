@@ -14,7 +14,7 @@ class VideoQuerySet(models.QuerySet):
         now = timezone.now()
         return self.filter(
             state=PublishStateOptions.PUBLISH,
-            # publish_timestamp__lte = now
+            publish_timestamp__lte = now
         )
 
 class VideoManager(models.Manager):
@@ -42,8 +42,21 @@ class Video(models.Model):
     
     @property
     def is_published(self):
-        return self.active
+        if self.active is False:
+            return False
+        if self.state != PublishStateOptions.PUBLISH:
+            return False
+        pub_timestamp = self.publish_timestamp
+        if pub_timestamp is None:
+            return False
+        now = timezone.now()
+        return pub_timestamp <=now
     
+    def get_video_id(self):
+        if not self.is_published:
+            return None
+        return self.video_id
+
     def get_playlist_ids(self):
         #self <foreigned_obj>_set.all()
         lists = list(self.featured_playlist.all().values_list("title",flat=True))

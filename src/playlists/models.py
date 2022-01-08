@@ -24,7 +24,7 @@ class PlayListQuerySet(models.QuerySet):
         now = timezone.now()
         return self.filter(
             state=PublishStateOptions.PUBLISH,
-            # publish_timestamp__lte = now
+            publish_timestamp__lte = now
         )
 
 class PlayListManager(models.Manager):
@@ -58,6 +58,9 @@ class PlayList(models.Model):
 
     objects = PlayListManager()
     
+    # class Meta:
+    #     unique_together = (('title','slug'))
+
     def __str__(self):
         return self.title
 
@@ -76,11 +79,42 @@ class PlayList(models.Model):
         return super().save(*args,**kwargs)
 
     def get_short_display(self):
-        return 
+        return ""
     
+    def get_video_id(self):
+        """get main video id to render video for users"""
+        if self.video is None:
+            return None
+        return self.video.get_video_id()
+
+    def get_clips(self):
+        """get clips id to render clips for users"""
+        return self.playlistitem_set.all().published()
+
     @property
     def is_published(self):
         return self.active
+
+
+class PlayListItemQuerySet(models.QuerySet):
+    def published(self):
+        now = timezone.now()
+        return self.filter(
+            playlist_state=PublishStateOptions.PUBLISH,
+            playlist_publish_timestamp__lte = now,
+            video_state=PublishStateOptions.PUBLISH,
+            video_publish_timestamp__lte = now
+        )
+
+class PlayListItemManager(models.Manager):
+    def get_queryset(self):
+        return PlayListItemQuerySet(self.model,using=self._db) 
+    
+    def published(self):
+        return self.get_queryset().published()
+
+    def featured_playlist(self):
+        return self.get_queryset().filter(type=PlayListTypeChoices.PLAYLIST)
     
 
 class PlayListItem(models.Model):
@@ -100,6 +134,13 @@ class MovieProxyManager(PlayListManager):
 
 class MovieProxy(PlayList):
     objects = MovieProxyManager()
+
+    def get_movie_id(self):
+        """get movie id to render movie for users"""
+        
+        return self.get_video_id()
+
+
     class Meta:
         verbose_name = "Movie"
         verbose_name_plural = "Movies"
@@ -132,6 +173,16 @@ class TVShowProxy(PlayList):
     def get_short_display(self):
         return f"{self.seasons.count()} Seasons"
 
+    def get_video_id(self):
+        """get movie id to render movie for users"""
+        if self.video is None:
+            return None
+        return self.video.get_video_id()
+
+    def get_clips(self):
+        """get clips id to render clips for users"""
+        return self.playlistitem_set.all().published()
+
 class TVShowSeasonProxyManager(PlayListManager):
     def all(self):
         return self.get_queryset().filter(parent__isnull=False,type=PlayListTypeChoices.SEASON)
@@ -146,4 +197,11 @@ class TVShowSeasonProxy(PlayList):
     def save(self, *args, **kwargs):
         self.type = PlayListTypeChoices.SEASON
         return super().save(*args, **kwargs)
-
+    
+    def get_season_trailer(self):
+        """get espisodes id to render  for users"""
+        return self.get_video_id()
+    
+    def get_episodes(self):
+        """get clips id to render clips for users"""
+        return self.playlistitem_set.all().published()

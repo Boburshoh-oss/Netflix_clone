@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block head_title %}  
+    <h1>{{object.title}} /</h1>
+    {{ block.super }}
+{% endblock %}
+
+{% block content %}
+
+<h1>{{object.title}} hech narsa yo'qmi</h1>
+
+    <ul>
+            <li>
+                {{object.slug}}
+                {% if object.get_short_display %}
+                    {{object.get_short_display}}
+                {% endif %}
+            </li>
+    </ul>
+
+{% for season in object.seasons %}
+    <li>{{season.title}} {{season.title}}</li>
+{% endfor %}
+
+{% endblock %}
