@@ -1,0 +1,7 @@
+{% load rating %}
+<div> 
+    <a href="{{movie.get_absolute_url}}">
+        {{movie}}
+        {% rating instance=movie rating_only=True %}
+    </a>
+</div>

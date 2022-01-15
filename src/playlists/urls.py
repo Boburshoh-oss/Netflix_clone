@@ -1,5 +1,13 @@
 from django.urls import path, re_path
-from .views import MovieListView, TVShowListView,FeaturedPlayListListView, MovieDetailView, PlaylistDetailView,TVShowDetailView, TVShowSeasonDetailView
+from .views import (MovieListView,
+                    TVShowListView,
+                    FeaturedPlayListListView,
+                    MovieDetailView,
+                    PlaylistDetailView,
+                    TVShowDetailView,
+                    TVShowSeasonDetailView,
+                    SearchView
+                    )
 
 
 urlpatterns = [
@@ -12,5 +20,6 @@ urlpatterns = [
     path('shows/<slug:slug>/season/', TVShowListView.as_view()),
     path('shows/<slug:slug>/', TVShowDetailView.as_view()),
     path('', FeaturedPlayListListView.as_view()),
+    path('search/', SearchView.as_view()),
 
 ]

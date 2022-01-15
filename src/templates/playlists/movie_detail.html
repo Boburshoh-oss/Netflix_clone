@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load rating %}
 {% block head_title %}  
     <h1>{{object.title}} /</h1>
     {{ block.super }}
@@ -7,18 +7,25 @@
 
 {% block content %}
 
-<h1>{{object.title}} hech narsa yo'qmi</h1>
+<h1>{{object.title}}</h1>
 
+<div>
+    {% rating instance=object %}
+</div>
+
+
+
+<div>
     <ul>
-            <li>
-                {{object.slug}}
-                {% if object.get_short_display %}
-                    {{object.get_short_display}}
-                {% endif %}
-            </li>
+        <li>
+            {{object.slug}}
+            {% if object.get_short_display %}
+                {{object.get_short_display}}
+            {% endif %}
+        </li>
     </ul>
 
 {% include "videos/embed.html" with video_id=object.get_movie_id %}
 {{object.video_id}}
-
+</div>
 {% endblock %}

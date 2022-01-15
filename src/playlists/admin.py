@@ -1,10 +1,13 @@
 from django.contrib import admin
-from .models import PlayList, PlayListItem, PlayListTypeChoices, TVShowProxy, TVShowSeasonProxy, MovieProxy
+from .models import PlayList, PlayListItem, PlayListTypeChoices, TVShowProxy, TVShowSeasonProxy, MovieProxy,PlayListRelated
 from tags.admin import TaggedItemInline
 
 class MovieProxyAdmin(admin.ModelAdmin):
-    list_display = ['title','parent']
-    field = ['title','decription','category','state',"video","category"]
+    inlines = [TaggedItemInline]
+    # list_display = ['title','category']
+    # field = ['title','decription','category','state',"video"]
+    list_display = ['title','category','description','parent']
+    fields = ["title","video",'category',"description","slug","state","active",'order']
 
     
     class Meta:
@@ -19,9 +22,9 @@ class SeasonEpisodeProxyInline(admin.TabularInline):
     extra = 0
 
 class TVShowSeasonProxyAdmin(admin.ModelAdmin):
-    inlines = [SeasonEpisodeProxyInline]
-    list_display = ['title','parent']
-    field = ['title','decription','state',"video"]
+    inlines = [SeasonEpisodeProxyInline,TaggedItemInline]
+    list_display = ['title','category','description','parent']
+    fields = ['parent',"title","video",'category',"description","slug","state","active",'order']
     
     class Meta:
         model = TVShowSeasonProxy
@@ -36,8 +39,8 @@ class TVShowSeasonProxyInline(admin.TabularInline):
 
 class TVShowProxyAdmin(admin.ModelAdmin):
     inlines = [TaggedItemInline,TVShowSeasonProxyInline]
-    field = ['title','decription','state',"video","category"]
-    
+    list_display = ['title','category','description','parent']
+    fields = ["title","video","description","category","slug","state","active",'order']
     class Meta:
         model = TVShowProxy
     
@@ -45,6 +48,10 @@ class TVShowProxyAdmin(admin.ModelAdmin):
         return TVShowProxy.objects.all()
 admin.site.register(TVShowProxy,TVShowProxyAdmin)
 
+class PlayListRelatedInline(admin.TabularInline):
+    model = PlayListRelated
+    fk_name = 'playlist'
+    extra = 0
 
 class PlayListItemInline(admin.TabularInline):
     model = PlayListItem
@@ -52,8 +59,9 @@ class PlayListItemInline(admin.TabularInline):
 admin.site.register(PlayListItem)
 
 class PlayListAdmin(admin.ModelAdmin):
-    inlines = [PlayListItemInline]
-    list_display = ['title','description','parent']
+    inlines = [PlayListItemInline,PlayListRelatedInline,TaggedItemInline]
+    list_display = ['title','description','parent',"category"]
+    fields = ["title","category","description","slug","state","active",'order']
     
     class Meta:
         model = PlayList

@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 from tags.models import TaggedItem
-
+from django.db.models.signals import pre_save
+from videos.signals import unique_slugify_pre_save
 # Create your models here.
 class Category(models.Model):
     title = models.CharField(max_length=200)
@@ -13,3 +14,7 @@ class Category(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def get_absolute_url(self):
+        return f"/cat/{self.slug}/"
+pre_save.connect(unique_slugify_pre_save, sender=Category)

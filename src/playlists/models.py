@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 from tags.models import TaggedItem
 from ratings.models import Rating
-from django.db.models import Avg, Max, Min
+from django.db.models import Avg, Max, Min, Q
 
 
 class PublishStateOptions(models.TextChoices):
@@ -26,6 +26,23 @@ class PlayListQuerySet(models.QuerySet):
             state=PublishStateOptions.PUBLISH,
             publish_timestamp__lte = now
         )
+    
+    def search(self, query=None):
+        if query is None:
+            return self
+        return self.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(category__title__icontains=query) |
+            Q(category__slug__icontains=query) |
+            Q(tags__tag__icontains=query) 
+        ).movie_or_show().distinct()
+    
+    def movie_or_show(self):
+        return self.filter(
+            Q(type=PlayListTypeChoices.MOVIE) |
+            Q(type=PlayListTypeChoices.SHOW)  
+        )
 
 class PlayListManager(models.Manager):
     def get_queryset(self):
@@ -39,6 +56,7 @@ class PlayListManager(models.Manager):
         
 class PlayList(models.Model):
     parent = models.ForeignKey('self',on_delete=models.SET_NULL,null=True, blank=True)
+    related = models.ManyToManyField('self', blank=True, related_name='related', through='PlayListRelated')
     category = models.ForeignKey("categories.Category", on_delete=models.SET_NULL,blank=True,null=True)
     order = models.IntegerField(default=1)
     category = models.ForeignKey("categories.Category",blank=True, null=True,on_delete=models.SET_NULL)
@@ -63,6 +81,32 @@ class PlayList(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def get_related_items(self):
+        return self.playlistrelated_set.all()
+    
+    def get_absolute_url(self):
+        if self.is_movie:
+            return f"/playlist/movies/{self.slug}"
+        if self.is_show:
+            return f"/playlist/shows/{self.slug}"
+        if self.is_season and self.parent is not None:
+            return f"/playlist/shows/{self.parent.slug}/season/{self.slug}"
+        return f"/playlists/{self.slug}"
+        
+    
+    
+    @property
+    def is_season(self):
+        return self.type == PlayListTypeChoices.SEASON
+    
+    @property
+    def is_movie(self):
+        return self.type == PlayListTypeChoices.MOVIE
+    
+    @property
+    def is_show(self):
+        return self.type == PlayListTypeChoices.SHOW
 
     def get_rating_avg(self):
         return PlayList.objects.filter(id=self.id).aggregate(Avg("ratings__value"))
@@ -100,10 +144,10 @@ class PlayListItemQuerySet(models.QuerySet):
     def published(self):
         now = timezone.now()
         return self.filter(
-            playlist_state=PublishStateOptions.PUBLISH,
-            playlist_publish_timestamp__lte = now,
-            video_state=PublishStateOptions.PUBLISH,
-            video_publish_timestamp__lte = now
+            playlist__state=PublishStateOptions.PUBLISH,
+            playlist__publish_timestamp__lte = now,
+            video__state=PublishStateOptions.PUBLISH,
+            video__publish_timestamp__lte = now
         )
 
 class PlayListItemManager(models.Manager):
@@ -122,7 +166,7 @@ class PlayListItem(models.Model):
     video = models.ForeignKey("videos.Video", on_delete=models.CASCADE)
     order = models.IntegerField(default=1)
     timestamp = models.DateTimeField(auto_now_add=True)
-    
+    objects = PlayListItemManager()
     class Meta:
         ordering = ["order","-timestamp"]
 
@@ -204,4 +248,14 @@ class TVShowSeasonProxy(PlayList):
     
     def get_episodes(self):
         """get clips id to render clips for users"""
-        return self.playlistitem_set.all().published()
+        qs = self.playlistitem_set.all().published()
+        return qs
+
+def pr_limit_choices_to():
+    return Q(type=PlayListTypeChoices.MOVIE) | Q(type=PlayListTypeChoices.SHOW)
+
+class PlayListRelated(models.Model):
+    playlist = models.ForeignKey("playlists.PlayList", on_delete=models.CASCADE)
+    related = models.ForeignKey("playlists.PlayList", on_delete=models.CASCADE, related_name='related_item', limit_choices_to=pr_limit_choices_to)
+    order = models.IntegerField(default=1)
+    timestamp = models.DateTimeField(auto_now_add=True)

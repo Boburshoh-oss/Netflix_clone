@@ -76,9 +76,24 @@ class VideoAllProxy(Video):
         verbose_name = "All Video"
         verbose_name_plural = "All Videos"
 
+    def save(self, *args, **kwargs):     
+        if self.state == PublishStateOptions.PUBLISH and self.publish_timestamp is None:
+            self.publish_timestamp = timezone.now()
+        elif self.state == PublishStateOptions.DRAFT:
+               self.publish_timestamp = None
+
+        return super().save(*args,**kwargs)
+    
 class VideoPublishedProxy(Video):
     class Meta:
         proxy = True
         verbose_name = "Published Video"
         verbose_name_plural = "Published Videos"
 
+    def save(self, *args, **kwargs):     
+        if self.state == PublishStateOptions.PUBLISH and self.publish_timestamp is None:
+            self.publish_timestamp = timezone.now()
+        elif self.state == PublishStateOptions.DRAFT:
+               self.publish_timestamp = None
+
+        return super().save(*args,**kwargs)

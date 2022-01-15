@@ -3,6 +3,7 @@ from django.http.response import Http404
 from django.shortcuts import render
 from .models import MovieProxy, PlayList, PublishStateOptions, TVShowProxy, TVShowSeasonProxy
 from django.views import generic
+from django.views import View
 
 # Create your views here.
 
@@ -14,7 +15,7 @@ class PlayListMixin():
         context = super().get_context_data(*args,**kwargs)
         if self.title is not None:
             context['title'] = self.title
-        print(context)
+        # print(context)
         return context
 
     def get_queryset(self):
@@ -29,6 +30,22 @@ class PlaylistDetailView(PlayListMixin,generic.DeleteView):
     #     kwargs = self.kwargs
     #     return self.get_queryset().filter(**kwargs).first()
         
+
+class SearchView(PlayListMixin,generic.ListView):
+    def get_context_data(self):
+        context = super().get_context_data()
+        query = self.request.GET.get("q")
+        if query is not None:
+            context['title'] = f"Searched for {query}"
+        else:
+            context['title'] = "Perform a search"
+        return context
+      
+    def get_queryset(self):
+        request = self.request
+        query = request.GET.get('q')
+        return PlayList.objects.all().search(query=query)
+
 
 class MovieListView(PlayListMixin,generic.ListView):
     queryset = MovieProxy.objects.all()    
@@ -81,5 +98,6 @@ class TVShowSeasonDetailView(PlayListMixin,generic.DeleteView):
         # return qs.first()
 
 class FeaturedPlayListListView(PlayListMixin,generic.ListView):
+    template_name = "playlists/featured_list.html"
     queryset = PlayList.objects.featured_playlist()
     title = 'Featured'

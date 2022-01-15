@@ -5,6 +5,7 @@ class VideoAdmin(admin.ModelAdmin):
     list_display = ["title","video_id","state", "is_published"]
     search_fields = ['video_id']
     list_filter = ["active","state"]
+    readonly_fields = ["id","is_published", "publish_timestamp","get_playlist_ids"]
     class Meta:
         model = Video
 admin.site.register(Video,VideoAdmin)
@@ -23,9 +24,9 @@ class VideoAllAdmin(admin.ModelAdmin):
 admin.site.register(VideoAllProxy, VideoAllAdmin)
 
 class VideoPublishedProxyAdmin(admin.ModelAdmin):
-    list_display = ["title","video_id"]
+    llist_display = ["title","video_id","state", "is_published"]
     search_fields = ['video_id']
-    
+    readonly_fields = ["id","is_published", "publish_timestamp","get_playlist_ids"]
     class Meta:
         model = VideoPublishedProxy
     

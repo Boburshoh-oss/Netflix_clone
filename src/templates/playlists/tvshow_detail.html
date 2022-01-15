@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load rating %}
 {% block head_title %}  
     <h1>{{object.title}} /</h1>
     {{ block.super }}
@@ -7,8 +7,13 @@
 
 {% block content %}
 
-<h1>{{object.title}} hech narsa yo'qmi</h1>
+<h1>{{object.title}}</h1>
 
+<div>
+    {% rating instance=object%}
+</div>
+
+<div>
     <ul>
             <li>
                 {{object.slug}}
@@ -18,8 +23,14 @@
             </li>
     </ul>
 
+    <h5>Trailer</h5>   
+    {% include 'videos/embed.html' with video_id=object.get_video_id %}
+
 {% for season in object.seasons %}
-    <li>{{season.title}} {{season.title}}</li>
+    <li>{{forloop.counter}}
+       <a href="{{season.get_absolute_url}}"> {{season.title}} </a>
+    </li>
 {% endfor %}
+</div>
 
 {% endblock %}

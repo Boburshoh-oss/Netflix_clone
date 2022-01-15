@@ -2,29 +2,33 @@
 
 {% block head_title %}
 
-    {% if title %}
-        <h1>{{title}} /</h1>
-    {% endif %} 
-    {{ block.super }}
+{% if title %}
+<h1>{{title}} /</h1>
+{% endif %}
+{{ block.super }}
 
 {% endblock %}
 
 {% block content %}
 
-    {% if title %} 
-        <h1>{{title}}</h1>
-    {% endif %}
+{% if title %}
+<h1>{{title}} {{object_list.count}} items</h1>
+{% endif %}
 
-    <ul>
-        {% for instance in object_list %}
-            <li>
-                {{instance.title}}
-                {{instance.slug}}
-                {% if instance.get_short_display %}
-                    {{instance.get_short_display}}
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
+
+{% for instance in object_list %}
+<div>
+    <h3>{{instance.title}}</h3> 
+    <p>{{instance.description}}</p>
+    {% if instance.is_movie %}
+    {% include "playlists/cards/movie.html" with movie=instance%}
+    {% elif instance.is_show %}
+    {% include "playlists/cards/show.html" with show=instance%}
+    {% else %}
+    {% endif %}
+</div>
+{% endfor %}
+
+
 
 {% endblock %}
